@@ -1,5 +1,6 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const {app, BrowserWindow} = require('electron');
+const { ipcMain } = require('electron/main');
 const path = require('path')
 
 function createWindow () {
@@ -8,7 +9,9 @@ function createWindow () {
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: true,
+      sandbox: true
     }
   })
 
@@ -17,6 +20,9 @@ function createWindow () {
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
+  mainWindow.webContents.on('did-finish-load', (evt) => {
+    mainWindow.webContents.send('onWebcontentsValue', 'on load...');
+  });
 }
 
 // This method will be called when Electron has finished
@@ -29,6 +35,14 @@ app.whenReady().then(() => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  })
+
+  ipcMain.on('onInputValue', (evt, payload) => {
+    console.log('on ipcMain Event:: ', payload);
+
+    const computedPayload = payload + '(computed)';
+
+    evt.reply('replyInputValue', computedPayload);
   })
 })
 
